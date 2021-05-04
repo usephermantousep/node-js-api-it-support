@@ -7,7 +7,7 @@ const options = {
   day: "numeric",
 };
 
-const userSchema = new mongoose.Schema({
+const requestUserSchema = new mongoose.Schema({
   userName: {
     type: String,
     required: true,
@@ -46,4 +46,4 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("RequestUserAccount", requestUserSchema);

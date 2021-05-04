@@ -1,8 +1,10 @@
 const router = require("express").Router();
 const User = require("../model/User");
 const jwt = require("jsonwebtoken");
+const verify = require("./verifyToken");
 const bcrypt = require("bcryptjs");
 const { registerValidation, loginValidation } = require("../validation");
+const RequestUserAccount = require("../model/RequestUserAccount");
 
 router.post("/register", async (req, res) => {
   //Validate request
@@ -14,7 +16,7 @@ router.post("/register", async (req, res) => {
     });
 
   //checking user in existing database
-  const emailExist = await User.findOne({
+  const emailExist = await RequestUserAccount.findOne({
     email: req.body.email,
   });
 
@@ -29,7 +31,7 @@ router.post("/register", async (req, res) => {
   const hashPassword = await bcrypt.hash(req.body.password, salt);
 
   //insert user into database
-  const user = new User({
+  const userRequest = new RequestUserAccount({
     userName: req.body.userName,
     name: req.body.name,
     email: req.body.email,
@@ -37,7 +39,7 @@ router.post("/register", async (req, res) => {
   });
 
   try {
-    const savedUser = await user.save();
+    const savedUser = await userRequest.save();
     res.status(200).send({
       message: "success",
       data: savedUser,
@@ -52,6 +54,11 @@ router.post("/register", async (req, res) => {
 router.get("/", async (req, res) => {
   const data = await User.find();
   res.send(data);
+});
+
+router.get("/requestaccount", async (req, res) => {
+  const data = await RequestUserAccount.find();
+  res.status(200).send(data);
 });
 
 router.post("/login", async (req, res) => {
@@ -89,6 +96,37 @@ router.post("/login", async (req, res) => {
     status: "success",
     token: token,
     data: user,
+  });
+});
+
+router.post("/photo", verify, async (req, res) => {
+  //handle auth token
+
+  //handle image request
+
+  //upload to folder images
+
+  //update to user
+  const updateUser = User.findByIdAndUpdate(
+    {
+      _id: req.body.id,
+    },
+    {
+      update: {
+        $set: {
+          imagePath: "imagePath",
+        },
+      },
+    }
+  );
+
+  //response
+  res.status(200).send({
+    status: "success",
+    message: "image uploaded",
+    data: {
+      updateUser,
+    },
   });
 });
 
