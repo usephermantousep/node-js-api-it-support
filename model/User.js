@@ -8,12 +8,6 @@ const options = {
 };
 
 const userSchema = new mongoose.Schema({
-  userName: {
-    type: String,
-    required: true,
-    min: 4,
-    max: 255,
-  },
   name: {
     type: String,
     required: true,
@@ -32,9 +26,29 @@ const userSchema = new mongoose.Schema({
     max: 255,
     min: 6,
   },
-  line_approval: {
+  lineApproval: {
     type: Array,
-    required: true,
+    default: [],
+  },
+  area: {
+    type: String,
+    default: "",
+  },
+  divisi: {
+    type: String,
+    default: "",
+  },
+  imagePath: {
+    type: String,
+    default: "",
+  },
+  status: {
+    type: String,
+    default: "USER",
+  },
+  isActive: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,

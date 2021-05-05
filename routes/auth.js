@@ -4,8 +4,18 @@ const jwt = require("jsonwebtoken");
 const verify = require("./verifyToken");
 const bcrypt = require("bcryptjs");
 const { registerValidation, loginValidation } = require("../validation");
-const RequestUserAccount = require("../model/RequestUserAccount");
 
+router.get("/", async (req, res) => {
+  //fetch all data
+  const data = await User.find();
+  res.send({
+    status: "success",
+    message: "all user fetched",
+    data: data,
+  });
+});
+
+//register
 router.post("/register", async (req, res) => {
   //Validate request
   const { error } = registerValidation(req.body);
@@ -16,7 +26,7 @@ router.post("/register", async (req, res) => {
     });
 
   //checking user in existing database
-  const emailExist = await RequestUserAccount.findOne({
+  const emailExist = await User.findOne({
     email: req.body.email,
   });
 
@@ -31,8 +41,7 @@ router.post("/register", async (req, res) => {
   const hashPassword = await bcrypt.hash(req.body.password, salt);
 
   //insert user into database
-  const userRequest = new RequestUserAccount({
-    userName: req.body.userName,
+  const userRequest = new User({
     name: req.body.name,
     email: req.body.email,
     password: hashPassword,
@@ -41,7 +50,8 @@ router.post("/register", async (req, res) => {
   try {
     const savedUser = await userRequest.save();
     res.status(200).send({
-      message: "success",
+      status: "ok",
+      message: "success insert data",
       data: savedUser,
     });
   } catch (err) {
@@ -51,54 +61,76 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
-  const data = await User.find();
-  res.send(data);
-});
-
-router.get("/requestaccount", async (req, res) => {
-  const data = await RequestUserAccount.find();
-  res.status(200).send(data);
-});
-
+//login
 router.post("/login", async (req, res) => {
-  //validation
-  const { error } = loginValidation(req.body);
-  if (error)
-    return res.status(400).send({
-      status: "error",
-      message: error.details[0].message,
+  try {
+    //validation
+    const { error } = loginValidation(req.body);
+    if (error)
+      return res.status(400).send({
+        status: "error",
+        message: error.details[0].message,
+      });
+
+    //checking user in existing database
+    const user = await User.findOne({
+      email: req.body.email,
     });
 
-  //checking user in existing database
-  const user = await User.findOne({
-    email: req.body.email,
-  });
+    if (!user)
+      return res.status(400).send({
+        status: "error",
+        message: "email is not registered",
+      });
 
-  if (!user)
-    return res.status(400).send({
-      status: "error",
-      message: "email is not registered",
+    //if passord coorect
+    const validPass = await bcrypt.compare(req.body.password, user.password);
+    if (!validPass)
+      return res.status(400).send({
+        status: "error",
+        message: "password is wrong",
+      });
+
+    //creat a token
+    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
+
+    res.header("auth-token", token).status(200).send({
+      status: "success",
+      token: token,
+      data: user,
     });
-
-  //if passord coorect
-  const validPass = await bcrypt.compare(req.body.password, user.password);
-  if (!validPass)
-    return res.status(400).send({
+  } catch (err) {
+    res.status(400).send({
       status: "error",
-      message: "password is wrong",
+      message: err,
     });
-
-  //creat a token
-  const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
-
-  res.header("auth-token", token).status(200).send({
-    status: "success",
-    token: token,
-    data: user,
-  });
+  }
 });
 
+//update
+router.post("/update/:id", verify, async (req, res) => {
+  let { ...data } = req.body;
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, data, {
+      new: false,
+    });
+    console.log(user);
+
+    const updated = await User.findById(req.params.id);
+    res.send({
+      status: "ok",
+      message: "data updated",
+      data: updated,
+    });
+  } catch (err) {
+    res.status(400).send({
+      status: "error",
+      message: err,
+    });
+  }
+});
+
+//upload picture
 router.post("/photo", verify, async (req, res) => {
   //handle auth token
 

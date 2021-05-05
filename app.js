@@ -26,6 +26,12 @@ app.use(express.json());
 //Router middleware
 app.use("/api/user", authRoute);
 app.use("/api/posts", postRoute);
+app.use("/", (req, res) => {
+  res.status(404).send({
+    status: 404,
+    message: "NOT FOUND",
+  });
+});
 
 app.listen(3000, () => {
   console.log("server is UP and RUNNING...");
