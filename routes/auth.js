@@ -6,13 +6,20 @@ const bcrypt = require("bcryptjs");
 const { registerValidation, loginValidation } = require("../validation");
 
 router.get("/", async (req, res) => {
-  //fetch all data
-  const data = await User.find();
-  res.send({
-    status: "success",
-    message: "all user fetched",
-    data: data,
-  });
+  try {
+    //fetch all data
+    const data = await User.find();
+    res.send({
+      status: "success",
+      message: "all user fetched",
+      data: data,
+    });
+  } catch (err) {
+    res.status(500).send({
+      status: "error",
+      message: err,
+    });
+  }
 });
 
 //register
@@ -41,21 +48,22 @@ router.post("/register", async (req, res) => {
   const hashPassword = await bcrypt.hash(req.body.password, salt);
 
   //insert user into database
-  const userRequest = new User({
+  const user = new User({
     name: req.body.name,
     email: req.body.email,
     password: hashPassword,
   });
 
   try {
-    const savedUser = await userRequest.save();
+    const savedUser = await user.save();
     res.status(200).send({
       status: "ok",
       message: "success insert data",
       data: savedUser,
     });
   } catch (err) {
-    res.status(400).send({
+    res.status(500).send({
+      status: "error",
       message: err,
     });
   }
@@ -91,8 +99,23 @@ router.post("/login", async (req, res) => {
         message: "password is wrong",
       });
 
+    const isActive = await User.findOne({
+      email: req.body.email,
+      isActive: true,
+    });
+
+    if (!isActive) {
+      return res.status(400).send({
+        status: "error",
+        message: "account not activated",
+      });
+    }
+
     //creat a token
-    const token = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET);
+    const token = jwt.sign(
+      { _id: user._id, isActive: user.isActive },
+      process.env.TOKEN_SECRET
+    );
 
     res.header("auth-token", token).status(200).send({
       status: "success",
@@ -100,7 +123,7 @@ router.post("/login", async (req, res) => {
       data: user,
     });
   } catch (err) {
-    res.status(400).send({
+    res.status(500).send({
       status: "error",
       message: err,
     });
@@ -109,8 +132,10 @@ router.post("/login", async (req, res) => {
 
 //update
 router.post("/update/:id", verify, async (req, res) => {
+  //compile data
   let { ...data } = req.body;
   try {
+    //find user & update
     const user = await User.findByIdAndUpdate(req.params.id, data, {
       new: false,
     });
@@ -123,7 +148,55 @@ router.post("/update/:id", verify, async (req, res) => {
       data: updated,
     });
   } catch (err) {
-    res.status(400).send({
+    res.status(500).send({
+      status: "error",
+      message: err,
+    });
+  }
+});
+
+//delete
+router.delete("/delete/:id", verify, async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    res.send({
+      status: "success",
+      message: "user deleted",
+      data: user,
+    });
+  } catch (err) {
+    res.status(500).send({
+      status: "error",
+      message: err,
+    });
+  }
+});
+
+router.get("/activate/:id", async (req, res) => {
+  try {
+    //find user & update
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      {
+        $set: {
+          isActive: true,
+          updatedAt: Date.now(),
+        },
+      },
+      {
+        new: false,
+      }
+    );
+    console.log(user);
+
+    const active = await User.findById(req.params.id);
+    res.send({
+      status: "ok",
+      message: "user activated",
+      data: active,
+    });
+  } catch (err) {
+    res.status(500).send({
       status: "error",
       message: err,
     });

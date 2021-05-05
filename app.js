@@ -28,7 +28,7 @@ app.use("/api/user", authRoute);
 app.use("/api/posts", postRoute);
 app.use("/", (req, res) => {
   res.status(404).send({
-    status: 404,
+    status: "error",
     message: "NOT FOUND",
   });
 });
