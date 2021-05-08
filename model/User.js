@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  notifId: {
+    type: String,
+    required: true,
+  },
   status: {
     type: String,
     default: "USER",
@@ -56,11 +60,11 @@ const userSchema = new mongoose.Schema({
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now(),
   },
   updatedAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now(),
   },
 });
 

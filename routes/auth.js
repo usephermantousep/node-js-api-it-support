@@ -51,14 +51,15 @@ router.post("/register", async (req, res) => {
   const user = new User({
     name: req.body.name,
     email: req.body.email,
+    notifId: req.body.notifId,
     password: hashPassword,
   });
 
   try {
     const savedUser = await user.save();
     res.status(200).send({
-      status: "ok",
-      message: "success insert data",
+      status: "success",
+      message: "insert new user",
       data: savedUser,
     });
   } catch (err) {
@@ -204,23 +205,25 @@ router.get("/activate/:id", async (req, res) => {
 });
 
 //upload picture
-router.post("/photo", verify, async (req, res) => {
+router.post("/photo", async (req, res) => {
   //handle auth token
 
   //handle image request
-
-  //upload to folder images
+  if (!req.file) {
+    return res.status(400).send({
+      status: "error",
+      message: "image must be uploaded",
+    });
+  }
 
   //update to user
-  const updateUser = User.findByIdAndUpdate(
+  const updateUser = await User.findByIdAndUpdate(
     {
       _id: req.body.id,
     },
     {
-      update: {
-        $set: {
-          imagePath: "imagePath",
-        },
+      $set: {
+        imagePath: req.file.path,
       },
     }
   );
