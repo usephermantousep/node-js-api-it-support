@@ -29,10 +29,7 @@ const fileStorage = multer.diskStorage({
     cb(null, "images");
   },
   filename: (req, file, cb) => {
-    cb(
-      null,
-      new Date().getTime() + "-" + req.body.id + "-" + file.originalname
-    );
+    cb(null, new Date().getTime() + "-" + req.body.id + ".jpg");
   },
 });
 
@@ -54,13 +51,14 @@ app.use("/images", express.static(path.join(__dirname, "images")));
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
 );
-// app.use((req, res, next) => {
-//   res.setHeader("Access-Control-Allow-Origin", "*");
-//   res.setHeader(
-//     "Access-Control-Allow-Method",
-//     "GET, PUT, POST, DELETE OPTIONS"
-//   );
-// });
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Method",
+    "GET, PUT, POST, DELETE, OPTIONS"
+  );
+  next();
+});
 //Router middleware
 app.use("/api/user", authRoute);
 app.use("/api/posts", postRoute);
